@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mein 3D Bücherregal</title>
+    
+    <!-- Google Fonts für schöne Typografie -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* 1. Grundeinstellungen */
+        body {
+            background-color: #0c0a09;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            perspective: 1200px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 400;
+            font-size: 28px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 12px;
+            margin-bottom: 50px;
+            color: #e7e5e4;
+        }
+
+        /* 2. Das Bücherregal */
+        .bookshelf {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        /* Bodenschatten unter dem Regal */
+        .bookshelf::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: -5%;
+            width: 110%;
+            height: 20px;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 70%);
+            z-index: -1;
+        }
+
+        /* 3. Das 3D-Buch Container-Objekt */
+        .book {
+            position: relative;
+            width: 40px;
+            height: 300px;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .book:hover, .book.active {
+            width: 220px;
+            transform: rotateY(-25deg) translateZ(20px);
+        }
+
+        /* 4. Der Buchrücken */
+        .book-spine {
+            position: absolute;
+            width: 40px;
+            height: 100%;
+            border-radius: 2px 0 0 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset -2px 0 5px rgba(0,0,0,0.4);
+            z-index: 2;
+        }
+
+        .book-spine span {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 1px;
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* 5. Das Buch-Cover */
+        .book-cover {
+            position: absolute;
+            left: 40px;
+            width: 180px;
+            height: 100%;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            box-sizing: border-box;
+            transform-origin: left;
+            transform: rotateY(90deg);
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: inset 4px 0 10px rgba(0,0,0,0.3), 5px 5px 20px rgba(0,0,0,0.5);
+            text-align: center;
+            overflow: hidden;
+            z-index: 3;
+        }
+
+        .book:hover .book-cover, .book.active .book-cover {
+            transform: rotateY(0deg);
+        }
+
+        /* Bild im Cover perfekt einpassen */
+        .book-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 6. Die Papierseiten */
+        .book-pages {
+            position: absolute;
+            left: 40px;
+            width: 176px;
+            height: 100%;
+            background: linear-gradient(to right, #e7e5e4 0%, #f5f5f4 100%);
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            transform-origin: left;
+            transform: rotateY(90deg);
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+            background-image: repeating-linear-gradient(to bottom, #e7e5e4, #e7e5e4 2px, #d6d3d1 2px, #d6d3d1 3px);
+            z-index: 1;
+        }
+
+        .book:hover .book-pages, .book.active .book-pages {
+            transform: rotateY(0deg);
+        }
+
+        /* 7. Die Infobox */
+        .book-info {
+            width: 450px;
+            min-height: 90px;
+            background-color: #1c1917;
+            border: 1px solid #292524;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .book-info.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .book-info h3 {
+            font-family: 'Playfair Display', serif;
+            margin: 0 0 10px 0;
+            color: #f97316;
+            font-size: 20px;
+        }
+
+        .book-info p {
+            margin: 0;
+            font-size: 14px;
+            color: #a8a29e;
+            line-height: 1.6;
+        }
+
+        .download-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 16px;
+            background-color: #f97316;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+         }
+
+        .download-btn:hover {
+            background-color: #ea580c;
+         }
+
+         /* --- MOBILE ANPASSUNGEN (FÜR HANDYS) --- */
+        @media (max-width: 600px) {
+            /* 1. Überschrift etwas kleiner machen, damit sie nicht umbricht */
+            h1 {
+                font-size: 20px;
+                letter-spacing: 2px;
+                margin-bottom: 30px;
+            }
+
+            /* 2. Bücherregal scrollbar machen, falls es zu breit wird */
+            .bookshelf {
+                gap: 10px;
+                overflow-x: auto;
+                max-width: 100%;
+                padding-bottom: 20px;
+            }
+
+            /* 3. Infobox an die Handy-Breite anpassen (kein Überstehen mehr!) */
+            .book-info {
+                width: 85%;
+                max-width: 350px;
+                padding: 18px;
+            }
+
+            .book-info h3 {
+                font-size: 18px;
+            }
+
+            .book-info p {
+                font-size: 13px;
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <h1>FAVORITE BOOKS</h1>
+
+   <div class="bookshelf">
+        <!-- Buch 1: Dostojewski -->
+        <div class="book" 
+             data-title="Aufzeichnungen aus dem Untergrund" 
+             data-desc="Zapiski iz podpolja, auch bekannt als Aufzeichnungen aus dem Untergrund ist ein 1864 erschienener, berühmter Kurzroman von Fjodor Dostojewski, der als eines der ersten Werke des Existenzialismus gilt." 
+             data-link="https://onemorelibrary.com/">
+            <div class="book-spine" style="background-color: #c2410c;">
+                <span>Grid Systems</span>
+            </div>
+            <div class="book-pages"></div>
+            <div class="book-cover">
+                <img src="cover1.jpg" alt="Buchcover">
+            </div>
+        </div>
+
+        <!-- Buch 2: 1984 -->
+        <div class="book" 
+             data-title="1984" 
+             data-desc="1984 ist einer der einflussreichsten dystopischen Romane der Weltliteratur, geschrieben von dem britischen Schriftsteller George Orwell. Das im Jahr 1949 veröffentlichte Werk beschreibt einen totalitären Überwachungsstaat." 
+             data-link="https://onemorelibrary.com/">
+            <div class="book-spine" style="background-color: #fd0707;">
+                <span>1984</span>
+            </div>
+            <div class="book-pages"></div>
+            <div class="book-cover">
+                <img src="cover2.jpg" alt="Buchcover">
+            </div>
+        </div>
+
+        <!-- Buch 3: Dorian Gray -->
+        <div class="book" 
+             data-title="Das Bildnis des Dorian Gray" 
+             data-desc="Das Bildnis des Dorian Gray (Originaltitel: The Picture of Dorian Gray) ist der einzige Roman des irischen Schriftstellers Oscar Wilde. Das im Jahr 1890 erschienene Werk gilt als Klassiker der Schauerromantik." 
+             data-link="https://onemorelibrary.com/">
+            <div class="book-spine" style="background-color: #374151;">
+                <span>Dorian Gray</span>
+            </div>
+            <div class="book-pages"></div>
+            <div class="book-cover">
+                <img src="cover3.jpg" alt="Buchcover">
+            </div>
+        </div>
+
+        <!-- Buch 4: Weiße Nächte -->
+        <div class="book" 
+             data-title="Weiße Nächte" 
+             data-desc="„Weiße Nächte“ ist eine weltberühmte, im Jahr 1848 erschienene Novelle des russischen Schriftstellers Fjodor Dostojewski. Sie gehört zu den bekanntesten Liebesgeschichten der Weltliteratur." 
+             data-link="https://onemorelibrary.com/">
+            <div class="book-spine" style="background-color: #5a5961;">
+                <span>Weiße Nächte</span>
+            </div>
+            <div class="book-pages"></div>
+            <div class="book-cover">
+                <img src="cover4.jpg" alt="Buchcover">
+            </div>
+        </div>
+
+        <!-- Buch 5: Der Fremde -->
+        <div class="book" 
+             data-title="Der Fremde" 
+             data-desc="„Der Fremde“ ist einer der bekanntesten Romane des französischen Schriftstellers Albert Camus, veröffentlicht im Jahr 1942. Das Werk gilt als ein Haupttext des Absurdismus." 
+             data-link="https://onemorelibrary.com/">
+            <div class="book-spine" style="background-color: #059669;">
+                <span>Der Fremde</span>
+            </div>
+            <div class="book-pages"></div>
+            <div class="book-cover">
+                <img src="cover5.jpg" alt="Buchcover">
+            </div>
+        </div>
+    </div>
+
+    <!-- Die Infobox für das JavaScript (inklusive Download-Link) -->
+    <div id="bookInfoBox" class="book-info">
+        <h3 id="infoTitle">Klicke auf ein Buch</h3>
+        <p id="infoDesc">Hier erscheint die Beschreibung des ausgewählten Buches.</p>
+        <a id="infoLink" href="#" target="_blank" class="download-btn">Buch lesen / herunterladen ➔</a>
+    </div>
+
+    <!-- Die Infobox für das JavaScript -->
+    <div id="bookInfoBox" class="book-info">
+        <h3 id="infoTitle">Klicke auf ein Buch</h3>
+        <p id="infoDesc">Hier erscheint die Beschreibung des ausgewählten Buches.</p>
+       <a id="infoLink" href="#" target="_blank" class="download-btn">Buch lesen / herunterladen ➔</a>
+</div>
+    </div>
+
+    <script>
+      const books = document.querySelectorAll('.book');
+const infoBox = document.getElementById('bookInfoBox');
+const infoTitle = document.getElementById('infoTitle');
+const infoDesc = document.getElementById('infoDesc');
+const infoLink = document.getElementById('infoLink'); // 1. Link Element holen
+
+books.forEach(book => {
+    book.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        const isActive = book.classList.contains('active');
+
+        books.forEach(b => b.classList.remove('active'));
+
+        if (!isActive) {
+            book.classList.add('active');
+            infoTitle.textContent = book.getAttribute('data-title');
+            infoDesc.textContent = book.getAttribute('data-desc');
+            
+            // 2. Den spezifischen Link aus dem angeklickten Buch auslesen:
+            const linkUrl = book.getAttribute('data-link');
+            infoLink.setAttribute('href', linkUrl); // Setzt die passende Adresse
+            
+            infoBox.classList.add('visible');
+        } else {
+            infoBox.classList.remove('visible');
+        }
+    });
+});
+
+document.addEventListener('click', () => {
+    books.forEach(b => b.classList.remove('active'));
+    infoBox.classList.remove('visible');
+});
+    </script>
+
+</body>
+</html>
